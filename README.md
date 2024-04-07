@@ -35,6 +35,7 @@ As a pedestrian when I made a double press on the crosswalk button, I expect tha
 ![Project Simulation](https://github.com/M0hammedSaeed/On-demand-Traffic-Light-Control-Project/assets/114070625/7bafc5f9-3b2d-4f32-b94b-d64338985619)
 
 ## Project Design
-![Project Design](https://github.com/M0hammedSaeed/On-demand-Traffic-Light-Control-Project/assets/114070625/7670159d-ca3c-48dc-b5ad-31139ba15094)
+![Project Design](https://github.com/M0hammedSaeed/On-demand-Traffic-Light-Control-Project/assets/114070625/b1ee0feb-1c18-4d18-9135-1200530607ef)
+
 
 
