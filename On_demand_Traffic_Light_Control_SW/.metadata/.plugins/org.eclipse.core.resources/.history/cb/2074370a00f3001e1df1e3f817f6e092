@@ -1,0 +1,493 @@
+/*******************************************************************************
+ * [Module Name]: app.c
+ *
+ * [Description]: Source file that contain Implementation Functions for Applications.
+ *
+ * [Author]: Mohamed Saeed
+ *******************************************************************************/
+
+/*******************************************************************************
+ *                                  Includes
+ *******************************************************************************/
+
+#include "app.h"
+#include "../MCAL/EX_INTERRUPT/ex_interrupt.h"
+#include "../MCAL/G_INTERRUPT/g_interrupt.h"
+#include "../MCAL/TIMER/timer.h"
+#include "../EHAL/LED/led.h"
+#include "../EHAL/BUTTON/button.h"
+#include "util/delay.h"
+
+/*******************************************************************************
+ *                               Global Variable
+ *******************************************************************************/
+
+volatile uint8 buttonFlag = FALSE;
+
+volatile uint8 ledFlag = FALSE;
+volatile uint8 ledCount = 0;
+
+volatile uint8 ledPedstrianFlag = FALSE;
+volatile uint8 ledPedstrianCount = 0;
+
+uint8 red = 0;
+uint8 yellowBeforeRed = 0;
+uint8 yellowBeforeGreen = 0;
+uint8 green = 0;
+
+/*******************************************************************************
+ *                                private Function
+ *******************************************************************************/
+
+/*
+ * [Function Name]: APP_yellowLed
+ * [Description]  : This a private function is responsible to start the yellow light in traffic
+ * 					of car and if person press the button it also blinking both the yellow light
+ * 					of Pedestrian and car in traffic.
+ * [Args]  : void
+ * [Return]: void
+ */
+static void APP_yellowLed(void)
+{
+	if(buttonFlag == TRUE)
+	{
+		_delay_ms(30);
+		if(buttonFlag == TRUE)
+		{
+			if(ledPedstrianFlag == FALSE)
+			{
+				ledCount = 0;
+				ledPedstrianFlag = TRUE;
+				ledPedstrianCount = 0;
+			}
+
+			if(ledPedstrianCount%2 == 0)
+			{
+				LED_TurnOff(RED_LED_PEDESTRIAN_ID);
+				LED_TurnOn(YELLOW_LED_PEDESTRIAN_ID);
+				LED_TurnOff(GREEN_LED_PEDESTRIAN_ID);
+			}
+			else
+			{
+				LED_TurnOff(RED_LED_PEDESTRIAN_ID);
+				LED_TurnOff(YELLOW_LED_PEDESTRIAN_ID);
+				LED_TurnOff(GREEN_LED_PEDESTRIAN_ID);
+			}
+		}
+	}
+
+	if(ledCount%2 == 0)
+	{
+		LED_TurnOff(RED_LED_CAR_ID);
+		LED_TurnOn(YELLOW_LED_CAR_ID);
+		LED_TurnOff(GREEN_LED_CAR_ID);
+	}
+	else
+	{
+		LED_TurnOff(RED_LED_CAR_ID);
+		LED_TurnOff(YELLOW_LED_CAR_ID);
+		LED_TurnOff(GREEN_LED_CAR_ID);
+	}
+}
+
+/*
+ * [Function Name]: APP_redLed
+ * [Description]  : This a private function is responsible to ON the red light in car traffic
+ *              	and handle the case if person press the button.
+ * [Args]  : void
+ * [Return]: void
+ */
+static void APP_redLed(void)
+{
+	green = 0;
+	
+	ledFlag = TRUE;
+	ledCount = 0;
+
+	/* Blinking Yellow Led after 250ms for 5sec */
+	while(ledCount < 20)
+	{
+		yellowBeforeRed = 1;
+
+		APP_yellowLed();
+
+		if(ledCount == 19)
+		{
+			break;
+		}
+	}
+
+	ledFlag = TRUE;
+	ledCount = 0;
+	ledPedstrianFlag = TRUE;
+	ledPedstrianCount = 0;
+
+	while(ledFlag != FALSE)
+	{
+		red = 1;
+
+		LED_TurnOn(RED_LED_CAR_ID);
+		LED_TurnOff(YELLOW_LED_CAR_ID);
+		LED_TurnOff(GREEN_LED_CAR_ID);
+
+		LED_TurnOff(RED_LED_PEDESTRIAN_ID);
+		LED_TurnOff(YELLOW_LED_PEDESTRIAN_ID);
+		LED_TurnOn(GREEN_LED_PEDESTRIAN_ID);
+	}
+
+	LED_TurnOff(RED_LED_CAR_ID);
+	LED_TurnOff(YELLOW_LED_CAR_ID);
+	LED_TurnOff(GREEN_LED_CAR_ID);
+
+	LED_TurnOff(RED_LED_PEDESTRIAN_ID);
+	LED_TurnOff(YELLOW_LED_PEDESTRIAN_ID);
+	LED_TurnOff(GREEN_LED_PEDESTRIAN_ID);
+
+	yellowBeforeGreen = 0;
+}
+
+/*
+ * [Function Name]: APP_greenLed
+ * [Description]  : This a private function is responsible to ON the green light in car traffic
+ *	                and handle the case if person press the button.
+ * [Args]  : void
+ * [Return]: void
+ */
+static void APP_greenLed(void)
+{
+	uint8 interrupt = 0;
+
+	yellowBeforeGreen = 1;
+	yellowBeforeRed = 0;
+	red = 0;
+	ledFlag = TRUE;
+	ledCount = 0;
+
+	/* Blinking Yellow Led after 250ms for 5sec */
+	while(ledCount < 20)
+	{
+		APP_yellowLed();
+
+		if(buttonFlag == TRUE)
+		{
+			interrupt = 1;
+		}
+
+		if(ledCount == 19)
+		{
+			break;
+		}
+	}
+
+	ledFlag = TRUE;
+	ledCount = 0;
+	ledPedstrianFlag = TRUE;
+	ledPedstrianCount = 0;
+	green = 1;
+
+	while((ledFlag != FALSE) && (buttonFlag == FALSE))
+	{
+		yellowBeforeGreen = 0;
+
+		LED_TurnOff(RED_LED_CAR_ID);
+		LED_TurnOff(YELLOW_LED_CAR_ID);
+		LED_TurnOn(GREEN_LED_CAR_ID);
+
+		LED_TurnOn(RED_LED_PEDESTRIAN_ID);
+		LED_TurnOff(YELLOW_LED_PEDESTRIAN_ID);
+		LED_TurnOff(GREEN_LED_PEDESTRIAN_ID);
+	}
+
+	if(interrupt == 1)
+	{
+		yellowBeforeGreen = 1;
+	}
+
+	LED_TurnOff(RED_LED_CAR_ID);
+	LED_TurnOff(YELLOW_LED_CAR_ID);
+	LED_TurnOff(GREEN_LED_CAR_ID);
+
+	LED_TurnOff(RED_LED_PEDESTRIAN_ID);
+	LED_TurnOff(YELLOW_LED_PEDESTRIAN_ID);
+	LED_TurnOff(GREEN_LED_PEDESTRIAN_ID);
+}
+
+
+/*******************************************************************************
+ *                      		Functions Definitions
+ *******************************************************************************/
+
+/*
+ * [Function Name]: APP_init
+ * [Description]  : This function is responsible to initialize the application.
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_init(void)
+{
+	Ex_INT_Init();
+	Ex_INT0_SetCallBack(APP_intCase);
+
+	TIMER_Init();
+	TIMER0_SetCallBack(APP_timer0Case);
+	TIMER2_SetCallBack(APP_timer2Case);
+
+	GI_Enable();
+
+	BUTTON_Init();
+}
+
+/*
+ * [Function Name]: APP_start
+ * [Description]  : This function is responsible to start the application.
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_start(void)
+{
+	while(1)
+	{
+		if(buttonFlag == FALSE)
+		{
+			APP_normalMode();
+		}
+		else
+		{
+			APP_pedestrianMode();
+		}
+	}
+}
+
+/*
+ * [Function Name]: APP_normalMode
+ * [Description]  : This function is responsible to work the Led's of traffic for car
+ *              	like in real life (yellow -> red -> yellow -> green).
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_normalMode(void)
+{
+	if(red == 1)
+	{
+		APP_greenLed();
+	}
+	else
+	{
+		APP_redLed();
+	}
+}
+
+/*
+ * [Function Name]: APP_pedestrianMode
+ * [Description]  : This function is responsible to work the traffic of pedestrian when person
+ *              	Press the button.
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_pedestrianMode(void)
+{
+	if(buttonFlag == TRUE)
+	{
+		_delay_ms(30);
+		if(buttonFlag == TRUE)
+		{
+			APP_firstCase();
+			APP_secondCase();
+			buttonFlag = FALSE;
+		}
+	}
+}
+
+/*
+ * [Function Name]: APP_firstCase
+ * [Description]  : This function is responsible to handle the balance between the two Traffic
+ *              	when the person press the Button when traffic of car was in Green light
+ *             		or yellow light.
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_firstCase(void)
+{
+	if(green == 1)
+	{
+		ledFlag = TRUE;
+		ledCount = 0;
+		ledPedstrianFlag = TRUE;
+		ledPedstrianCount = 0;
+
+		/* Blinking Yellow Led after 250ms for 5sec */
+		if(yellowBeforeGreen != 1)
+		{
+			while((ledCount < 20) || (ledPedstrianCount < 20))
+			{
+				if(buttonFlag == TRUE)
+				{
+					_delay_ms(30);
+					if(buttonFlag == TRUE)
+					{
+						if(ledPedstrianFlag == FALSE)
+						{
+							ledCount = 0;
+							ledPedstrianFlag = TRUE;
+							ledPedstrianCount = 0;
+						}
+
+						if(ledPedstrianCount%2 == 0)
+						{
+							LED_TurnOff(RED_LED_PEDESTRIAN_ID);
+							LED_TurnOn(YELLOW_LED_PEDESTRIAN_ID);
+							LED_TurnOff(GREEN_LED_PEDESTRIAN_ID);
+						}
+						else
+						{
+							LED_TurnOff(RED_LED_PEDESTRIAN_ID);
+							LED_TurnOff(YELLOW_LED_PEDESTRIAN_ID);
+							LED_TurnOff(GREEN_LED_PEDESTRIAN_ID);
+						}
+					}
+				}
+
+				if(ledCount%2 == 0)
+				{
+					LED_TurnOff(RED_LED_CAR_ID);
+					LED_TurnOn(YELLOW_LED_CAR_ID);
+					LED_TurnOff(GREEN_LED_CAR_ID);
+				}
+				else
+				{
+					LED_TurnOff(RED_LED_CAR_ID);
+					LED_TurnOff(YELLOW_LED_CAR_ID);
+					LED_TurnOff(GREEN_LED_CAR_ID);
+				}
+
+				if(ledCount == 19 || ledPedstrianCount == 19)
+				{
+					break;
+				}
+			}
+		}
+
+		ledFlag = TRUE;
+		ledCount = 0;
+		ledPedstrianFlag = TRUE;
+		ledPedstrianCount = 0;
+
+		while((ledFlag != FALSE) && (ledPedstrianFlag != FALSE))
+		{
+			red = 1;
+
+			LED_TurnOn(RED_LED_CAR_ID);
+			LED_TurnOff(YELLOW_LED_CAR_ID);
+			LED_TurnOff(GREEN_LED_CAR_ID);
+
+			LED_TurnOff(RED_LED_PEDESTRIAN_ID);
+			LED_TurnOff(YELLOW_LED_PEDESTRIAN_ID);
+			LED_TurnOn(GREEN_LED_PEDESTRIAN_ID);
+		}
+
+	}
+}
+
+/*
+ * [Function Name]: APP_secondCase
+ * [Description]  : This function is responsible to handle the balance between the two Traffic
+ *              	when the person press the Button when traffic of car was in Red light.
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_secondCase(void)
+{
+
+}
+
+/*
+ * [Function Name]: APP_intCase
+ * [Description]  : This function is responsible to handle the button is pressed or not by
+ * 					External Interrupt and call the function in (ISR).
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_intCase(void)
+{
+	buttonFlag = TRUE;
+}
+
+/*
+ * [Function Name]: APP_timer0Case
+ * [Description]  : This function is responsible to handle the button is pressed or not by
+ * 					External Interrupt and call the function in (ISR).
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_timer0Case(void)
+{
+	if(ledFlag == TRUE)
+	{
+		ledCount++;
+		if(ledCount == 20)
+		{
+			ledFlag=FALSE;
+			ledCount=0;
+		}
+	}
+}
+
+/*
+ * [Function Name]: APP_intCase
+ * [Description]  : This function is responsible to handle the button is pressed or not by
+ * 					External Interrupt and call the function in (ISR).
+ * [Args]  : void
+ * [Return]: void
+ */
+void APP_timer2Case(void)
+{
+	if(ledPedstrianFlag == TRUE)
+	{
+		ledPedstrianCount++;
+
+		if(ledPedstrianCount == 20)
+		{
+			ledPedstrianFlag=FALSE;
+			ledPedstrianFlag=0;
+		}
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

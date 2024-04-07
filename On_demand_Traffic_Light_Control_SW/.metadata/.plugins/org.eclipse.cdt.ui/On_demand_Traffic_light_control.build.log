@@ -1,0 +1,20 @@
+05:27:49 **** Incremental Build of configuration Debug for project On_demand_Traffic_light_control ****
+make all 
+Invoking: Print Size
+avr-size --format=avr --mcu=atmega32 On_demand_Traffic_light_control.elf
+AVR Memory Usage
+----------------
+Device: atmega32
+
+Program:   10268 bytes (31.3% Full)
+(.text + .data + .bootloader)
+
+Data:        285 bytes (13.9% Full)
+(.data + .bss + .noinit)
+
+
+Finished building: sizedummy
+ 
+
+05:27:49 Build Finished. 0 errors, 0 warnings. (took 409ms)
+

@@ -1,0 +1,62 @@
+#include "src/EHAL/EXTERNAL_EEPROM/external_eeprom.h"
+#include "src/MCAL/GPIO/gpio.h"
+#define F_CPU 8000000U
+#include "util/delay.h"
+
+int main(void)
+{
+	uint8 val = 0;
+
+	EEPROM_init();
+
+	GPIO_SetPortDir(PORTD_ID, port_output);
+	GPIO_WritePort(PORTD_ID, 0x00);
+
+	EEPROM_writeByte(0x0311, 0x1F);
+	_delay_ms(5);
+
+	EEPROM_readByte(0x0311, &val);
+
+	while(1)
+	{
+		GPIO_WritePort(PORTD_ID, val);
+
+	}
+}
+
+//#include "src/MCAL/TWI/twi.h"
+//
+//int main(void)
+//{
+//	uint8 data;
+//
+//	TWI_init();
+//
+//	if(TWI_start() == EVENT_OK)
+//	{
+//		if(TWI_addressSelect(0x10, TWI_READ_MODE) == SLA_R_ACK_SENT)
+//		{
+//			if(TWI_dataEvent(&data, TWI_READ_MODE, NACK) == DATA_READ_NACK_SENT)
+//			{
+//				TWI_stop();
+//			}
+//		}
+//	}
+//
+//	if(TWI_start() == EVENT_OK)
+//	{
+//		if(TWI_addressSelect(0x10, TWI_WRITE_MODE) == SLA_W_ACK_SENT)
+//		{
+//			if(TWI_dataEvent(&data, TWI_WRITE_MODE, ACK) == DATA_WRITE_NACK_SENT)
+//			{
+//				TWI_stop();
+//			}
+//		}
+//	}
+//
+//	while(1)
+//	{
+//
+//
+//	}
+//}
